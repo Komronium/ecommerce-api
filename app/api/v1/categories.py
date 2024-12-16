@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.models.product import Category
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.api.deps import get_db_dependency
+from app.crud.category import get_category_by_id
+
 
 router = APIRouter()
 
@@ -30,18 +32,12 @@ def list_categories(db: Session = Depends(get_db_dependency)):
 
 @router.get("/{category_id}", response_model=CategoryResponse)
 def get_category(category_id: UUID, db: Session = Depends(get_db_dependency)):
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found.")
-    return category
+    return get_category_by_id(category_id, db)
 
 
 @router.put("/{category_id}", response_model=CategoryResponse)
 def update_category(category_id: UUID, updated_data: CategoryCreate, db: Session = Depends(get_db_dependency)):
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found.")
-
+    category = get_category_by_id(category_id, db)
     category.name = updated_data.name
     category.description = updated_data.description
     db.commit()
@@ -51,10 +47,7 @@ def update_category(category_id: UUID, updated_data: CategoryCreate, db: Session
 
 @router.delete("/{category_id}")
 def delete_category(category_id: UUID, db: Session = Depends(get_db_dependency)):
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found.")
-
+    category = get_category_by_id(category_id, db)
     db.delete(category)
     db.commit()
     return {"message": "Category deleted successfully"}
